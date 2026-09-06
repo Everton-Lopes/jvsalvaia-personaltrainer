@@ -1,0 +1,147 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { MessageSquare, X, ArrowDownRight } from 'lucide-react';
+import { openWhatsApp } from '../utils/whatsapp';
+import { ServiceType } from '../types';
+
+interface FloatingWhatsAppProps {
+  currentService?: ServiceType;
+  isMenuOpen?: boolean;
+}
+
+export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
+  currentService,
+  isMenuOpen = false,
+}) => {
+  const [showBalloon, setShowBalloon] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Monitor desktop vs mobile viewport for precise 24px / 18px margin anchoring
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 640);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Balão de mensagem: aparece AUTOMATICAMENTE e EXATAMENTE 17 SEGUNDOS após o carregamento
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowBalloon(true);
+    }, 17000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Fechar o balão: esconde apenas o balão, mantendo o botão flutuante disponível
+  const handleCloseBalloon = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowBalloon(false);
+  };
+
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    openWhatsApp({
+      serviceId: currentService || 'default',
+      ctaLocation: 'floating_whatsapp_button',
+      section: 'flutuante',
+    });
+  };
+
+  // Se o menu mobile estiver aberto, oculta para evitar sobreposição visual
+  if (isMenuOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      id="floating-whatsapp-container"
+      className="fixed z-50 flex flex-col items-end pointer-events-none select-none transition-all duration-300 ease-out"
+      style={{
+        bottom: isDesktop
+          ? 'max(24px, calc(env(safe-area-inset-bottom, 0px) + 24px))'
+          : 'max(18px, calc(env(safe-area-inset-bottom, 0px) + 18px))',
+        right: isDesktop
+          ? 'max(24px, calc(env(safe-area-inset-right, 0px) + 24px))'
+          : 'max(18px, calc(env(safe-area-inset-right, 0px) + 18px))',
+      }}
+    >
+      {/* BALÃO DE POP-UP DO WHATSAPP - COMPACTO, DISCRETO E EXATAMENTE AOS 17 SEGUNDOS */}
+      <AnimatePresence>
+        {showBalloon && (
+          <motion.div
+            key="whatsapp-popup-balloon"
+            id="floating-whatsapp-balloon"
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{
+              duration: 0.25,
+              ease: 'easeOut',
+            }}
+            onClick={handleWhatsAppClick}
+            className="pointer-events-auto mb-2.5 w-auto max-w-[calc(100vw-36px)] sm:max-w-sm bg-[#0c0c0c]/98 backdrop-blur-md border border-[#CCFF00]/40 hover:border-[#CCFF00] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.85)] text-center cursor-pointer group transition-colors relative"
+            role="dialog"
+            aria-label="Tire dúvidas sobre treinos ou consultoria no WhatsApp"
+          >
+            {/* Botão de Fechar 'X' Compacto */}
+            <button
+              type="button"
+              id="close-whatsapp-balloon"
+              onClick={handleCloseBalloon}
+              aria-label="Fechar mensagem do WhatsApp"
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#141414] border border-white/20 hover:border-[#CCFF00] text-white/70 hover:text-[#CCFF00] flex items-center justify-center transition-all cursor-pointer z-20 shadow-sm hover:scale-105"
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+
+            {/* Conteúdo em uma única linha compacta */}
+            <div className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap pr-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0 animate-pulse" />
+              <p className="text-[11px] sm:text-xs font-bold text-white group-hover:text-[#CCFF00] transition-colors leading-none tracking-tight flex items-center gap-1.5">
+                <span>Olá, tire dúvidas sobre treinos ou consultoria</span>
+                <ArrowDownRight className="w-3.5 h-3.5 text-[#CCFF00] shrink-0" aria-hidden="true" />
+              </p>
+            </div>
+
+            {/* Triângulo indicador apontando diretamente para o botão */}
+            <div className="absolute -bottom-1 right-6 sm:right-7 w-2.5 h-2.5 bg-[#0c0c0c] border-r border-b border-[#CCFF00]/40 transform rotate-45" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* BASE DO BOTÃO: GRADIENTE 60% #CCFF00 E 40% #10b981 COM INNER GLOW SUTIL DE 2PX */}
+      <div
+        id="floating-whatsapp-base-ring"
+        className="pointer-events-auto relative p-1 rounded-full border border-[#CCFF00]/60 backdrop-blur-md transition-transform duration-300"
+        style={{
+          background: 'linear-gradient(135deg, rgba(204,255,0,0.18) 0%, rgba(204,255,0,0.18) 60%, rgba(16,185,129,0.12) 100%)',
+          boxShadow: 'inset 0 0 2px 1px rgba(204, 255, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.65)',
+        }}
+      >
+        {/* BOTÃO FLUTUANTE DO WHATSAPP (SCALE 1.05 NO HOVER COM PULSAÇÃO SUAVE) */}
+        <button
+          type="button"
+          id="floating-whatsapp-btn"
+          onClick={handleWhatsAppClick}
+          className="btn-whatsapp-pulse relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#CCFF00] hover:bg-white text-black flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.65)] hover:scale-105 transition-all duration-300 cursor-pointer shrink-0 group touch-manipulation"
+          aria-label="Falar com João Victor no WhatsApp"
+        >
+          <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 fill-current group-hover:scale-105 transition-transform" />
+
+          {/* Micro Beacon ONLINE */}
+          <span className="absolute -top-1 -left-1 bg-black text-[#CCFF00] text-[8.5px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full border border-[#CCFF00] shadow-sm tracking-wide flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+            ONLINE
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+};

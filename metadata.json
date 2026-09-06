@@ -1,0 +1,6 @@
+{
+  "name": "João Victor Salvaia | Personal Trainer em Jundiaí",
+  "description": "Personal Trainer em Jundiaí especializado em hipertrofia, biomecânica, treinamento presencial, consultoria online e avaliação física.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
