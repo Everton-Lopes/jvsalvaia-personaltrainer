@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, ShieldCheck, MapPin, Dumbbell, Zap, CheckCircle2, ChevronDown } from 'lucide-react';
+import { ShieldCheck, MapPin, Dumbbell, Zap, CheckCircle2, ChevronDown } from 'lucide-react';
 import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
 import { EmeraldSpotlightCard } from './EmeraldSpotlightCard';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface HeroProps {
   currentService?: ServiceType;
@@ -116,7 +117,7 @@ export const Hero: React.FC<HeroProps> = ({ currentService }) => {
               onClick={handleCtaClick}
               className="btn-whatsapp-pulse w-full sm:w-auto inline-flex items-center justify-center text-center gap-3 bg-[#CCFF00] hover:bg-white text-black font-black uppercase tracking-widest text-sm sm:text-base px-8 sm:px-12 py-5 transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(0,0,0,0.6)] hover:shadow-[0_0_15px_rgba(204,255,0,0.3)] transform hover:-translate-y-0.5 rounded-full"
             >
-              <MessageSquare className="w-5 h-5 fill-current shrink-0" />
+              <WhatsAppIcon className="w-5 h-5 fill-current shrink-0" />
               <span className="text-center tracking-wider">
                 {activeCampaign ? activeCampaign.ctaText : 'FALAR COM JOÃO VICTOR'}
               </span>

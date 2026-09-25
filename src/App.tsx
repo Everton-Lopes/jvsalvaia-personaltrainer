@@ -15,6 +15,7 @@ import { Footer } from './components/Footer';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicyModal } from './components/PrivacyPolicyModal';
+import { StructuredData } from './components/StructuredData';
 import { initAnalytics } from './utils/analytics';
 import { ServiceType } from './types';
 
@@ -43,6 +44,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#050505] text-zinc-100 font-sans selection:bg-[#CCFF00] selection:text-black">
+      {/* SEO structured data (only injected when Google IDs are configured) */}
+      <StructuredData />
+
       {/* 
         STATIC FIXED PHOTOGRAPHIC GYM BACKGROUND
         Remains completely motionless during scroll while all page content passes over it.

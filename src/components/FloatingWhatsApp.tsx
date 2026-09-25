@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, X, ArrowDownRight } from 'lucide-react';
+import { X, ArrowDownRight } from 'lucide-react';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface FloatingWhatsAppProps {
   currentService?: ServiceType;
@@ -15,6 +16,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
 }) => {
   const [showBalloon, setShowBalloon] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const reshowTimerRef = useRef<number | null>(null);
+  const balloonClickedRef = useRef(false);
 
   // Monitor desktop vs mobile viewport for precise 24px / 18px margin anchoring
   useEffect(() => {
@@ -26,23 +29,54 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Balão de mensagem: aparece AUTOMATICAMENTE e EXATAMENTE 17 SEGUNDOS após o carregamento
+  // Balão de mensagem: primeira aparição AUTOMÁTICA após 60 segundos
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       setShowBalloon(true);
-    }, 17000);
+    }, 60000);
 
-    return () => clearTimeout(timer);
+    return () => window.clearTimeout(timer);
   }, []);
 
+  // Limpeza do timer de reapresentação ao desmontar
+  useEffect(() => {
+    return () => {
+      if (reshowTimerRef.current !== null) {
+        window.clearTimeout(reshowTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Reagenda a próxima aparição do balão (ciclo contínuo de 90s)
+  const scheduleReshow = () => {
+    if (balloonClickedRef.current) return;
+    if (reshowTimerRef.current !== null) {
+      window.clearTimeout(reshowTimerRef.current);
+    }
+    reshowTimerRef.current = window.setTimeout(() => {
+      setShowBalloon(true);
+      reshowTimerRef.current = null;
+    }, 90000);
+  };
+
   // Fechar o balão: esconde apenas o balão, mantendo o botão flutuante disponível
+  // e reagendando a próxima aparição automática.
   const handleCloseBalloon = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowBalloon(false);
+    scheduleReshow();
   };
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Se o clique foi no balão, encerra o ciclo de reapresentação nesta sessão.
+    if ((e.currentTarget as HTMLElement)?.id === 'floating-whatsapp-balloon') {
+      balloonClickedRef.current = true;
+      if (reshowTimerRef.current !== null) {
+        window.clearTimeout(reshowTimerRef.current);
+        reshowTimerRef.current = null;
+      }
+    }
     openWhatsApp({
       serviceId: currentService || 'default',
       ctaLocation: 'floating_whatsapp_button',
@@ -68,7 +102,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
           : 'max(18px, calc(env(safe-area-inset-right, 0px) + 18px))',
       }}
     >
-      {/* BALÃO DE POP-UP DO WHATSAPP - COMPACTO, DISCRETO E EXATAMENTE AOS 17 SEGUNDOS */}
+      {/* BALÃO DE POP-UP DO WHATSAPP - COMPACTO, DISCRETO E COM CICLO AUTOMÁTICO */}
       <AnimatePresence>
         {showBalloon && (
           <motion.div
@@ -86,7 +120,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
               ease: 'easeOut',
             }}
             onClick={handleWhatsAppClick}
-            className="pointer-events-auto mb-2.5 w-auto max-w-[calc(100vw-36px)] sm:max-w-sm bg-[#0c0c0c]/98 backdrop-blur-md border border-[#CCFF00]/40 hover:border-[#CCFF00] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.85)] text-center cursor-pointer group transition-colors relative"
+            className="whatsapp-balloon-bounce pointer-events-auto mb-2.5 w-auto max-w-[calc(100vw-36px)] sm:max-w-sm bg-[#0c0c0c]/98 backdrop-blur-md border border-[#CCFF00]/40 hover:border-[#CCFF00] px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.85)] text-center cursor-pointer group transition-colors relative"
             role="dialog"
             aria-label="Tire dúvidas sobre treinos ou consultoria no WhatsApp"
           >
@@ -96,7 +130,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
               id="close-whatsapp-balloon"
               onClick={handleCloseBalloon}
               aria-label="Fechar mensagem do WhatsApp"
-              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#141414] border border-white/20 hover:border-[#CCFF00] text-white/70 hover:text-[#CCFF00] flex items-center justify-center transition-all cursor-pointer z-20 shadow-sm hover:scale-105"
+              className="touch-hit-40 absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#141414] border border-white/20 hover:border-[#CCFF00] text-white/70 hover:text-[#CCFF00] flex items-center justify-center transition-all cursor-pointer z-20 shadow-sm hover:scale-105"
             >
               <X className="w-2.5 h-2.5" />
             </button>
@@ -133,7 +167,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
           className="btn-whatsapp-pulse relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#CCFF00] hover:bg-white text-black flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.65)] hover:scale-105 transition-all duration-300 cursor-pointer shrink-0 group touch-manipulation"
           aria-label="Falar com João Victor no WhatsApp"
         >
-          <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 fill-current group-hover:scale-105 transition-transform" />
+          <WhatsAppIcon className="w-7 h-7 sm:w-8 sm:h-8 fill-current group-hover:scale-105 transition-transform" />
 
           {/* Micro Beacon ONLINE */}
           <span className="absolute -top-1 -left-1 bg-black text-[#CCFF00] text-[8.5px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full border border-[#CCFF00] shadow-sm tracking-wide flex items-center gap-1">

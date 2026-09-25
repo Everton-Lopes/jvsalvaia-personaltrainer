@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShieldCheck, Lock, RefreshCw, CheckCircle } from 'lucide-react';
 import { TRAINER_INFO } from '../data/trainerData';
+import { WHATSAPP_PHONE_FORMATTED } from '../utils/whatsapp';
 import { resetConsent } from '../utils/analytics';
 
 interface PrivacyPolicyModalProps {
@@ -84,8 +85,9 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
                   <span className="text-[#CCFF00]">02 /</span> DADOS COLETADOS &amp; FINALIDADE
                 </h4>
                 <p className="text-white/60 text-xs">
-                  - <strong>Dados de Navegação:</strong> Informações agregadas de visitação e parâmetros de campanha (UTM, fbclid, gclid) para mensuração de tráfego via Meta Ads e Google Ads.<br />
-                  - <strong>Conversa no WhatsApp:</strong> Dados fornecidos voluntariamente durante a conversa para montagem de orçamento e alinhamento de horários.
+                  - <strong>Dados de Navegação:</strong> Este site pode utilizar cookies de mensuração de tráfego e conversão (Google Ads, Meta Ads) para campanhas publicitárias, sempre condicionados ao seu consentimento explícito no banner de cookies abaixo. Enquanto essas ferramentas não estiverem configuradas, nenhum dado de navegação é enviado a terceiros.<br />
+                  - <strong>Conversa no WhatsApp:</strong> A mensagem é composta no seu próprio navegador e entregue diretamente ao WhatsApp de {TRAINER_INFO.name}. O site em si não recebe, não transmite por servidor e não armazena o conteúdo da conversa; os dados são fornecidos voluntariamente por você durante o atendimento para montagem de orçamento e alinhamento de horários.<br />
+                  - <strong>Preferência de Consentimento:</strong> O localStorage do seu navegador é usado apenas para lembrar a sua escolha de cookies e, caso você aceite, um parâmetro temporário de campanha (UTM) no sessionStorage. Nenhum cookie de terceiros é definido até que as ferramentas de rastreamento sejam habilitadas.
                 </p>
               </div>
 
@@ -111,6 +113,9 @@ export const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({ isOpen, 
                     <span>Transparência total</span>
                   </div>
                 </div>
+                <p className="text-white/60 text-xs pt-1">
+                  Para exercer qualquer um desses direitos, fale diretamente pelo WhatsApp {WHATSAPP_PHONE_FORMATTED}.
+                </p>
               </div>
 
               {/* Cookie Reset */}

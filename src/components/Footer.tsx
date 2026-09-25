@@ -1,8 +1,9 @@
 import React from 'react';
-import { MessageSquare, Shield, ArrowUp } from 'lucide-react';
+import { Shield, ArrowUp } from 'lucide-react';
 import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp, WHATSAPP_PHONE_FORMATTED } from '../utils/whatsapp';
 import { JVLogo } from './JVLogo';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface FooterProps {
   onOpenPrivacyPolicy: () => void;
@@ -42,7 +43,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyPolicy }) => {
             }
             className="inline-flex items-center gap-2 bg-white/5 hover:bg-[#CCFF00] text-white hover:text-black font-black uppercase tracking-widest text-xs px-5 py-2.5 border border-white/15 hover:border-[#CCFF00] transition-colors cursor-pointer rounded-full"
           >
-            <MessageSquare className="w-3.5 h-3.5 fill-current shrink-0" />
+            <WhatsAppIcon className="w-3.5 h-3.5 fill-current shrink-0" />
             <span>WhatsApp: {WHATSAPP_PHONE_FORMATTED}</span>
           </button>
         </div>
@@ -69,10 +70,26 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyPolicy }) => {
         </div>
 
         {/* Copyright */}
-        <div className="text-center text-xs font-mono text-white/40 uppercase tracking-wider">
+        <div className="text-center text-xs font-mono text-white/40 uppercase tracking-wider space-y-2">
           <p>
             © {new Date().getFullYear()} JV Salvaia Personal Trainer • Todos os direitos reservados.
           </p>
+
+          {/* Agency credit line */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[10px] sm:text-[11px]">
+            <span>CRIADO E DESENVOLVIDO POR</span>
+            <span className="inline-flex items-center bg-white/90 rounded px-1.5 py-0.5">
+              <img
+                src="/eloSites-logo.png"
+                alt="ēloSites"
+                className="h-4 sm:h-5 w-auto"
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+              />
+            </span>
+            <span>O MELHOR SITE PELO MELHOR PREÇO</span>
+          </div>
         </div>
       </div>
     </footer>

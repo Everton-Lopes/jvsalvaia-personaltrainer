@@ -79,7 +79,7 @@ export const TrainingGallery: React.FC = () => {
   };
 
   return (
-    <div id="treinos" className="scroll-mt-28 space-y-12">
+    <div id="treinos" className="space-y-12">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

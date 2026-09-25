@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, HelpCircle, MessageSquare } from 'lucide-react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 import { FAQ_DATA } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -12,7 +13,7 @@ export const FAQ: React.FC = () => {
   };
 
   return (
-    <section id="faq" className="py-24 bg-transparent border-b border-white/10 relative overflow-hidden scroll-mt-24">
+    <section id="faq" className="py-24 bg-transparent border-b border-white/10 relative overflow-hidden">
       {/* Subtle Ambient Radial Lighting */}
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(204,255,0,0.06)_0%,transparent_65%)]" />
@@ -121,7 +122,7 @@ export const FAQ: React.FC = () => {
               }
               className="inline-flex items-center justify-center text-center gap-2 bg-[#CCFF00] hover:bg-white text-black font-black uppercase tracking-widest text-xs px-6 py-3.5 transition-colors shadow-[0_0_20px_rgba(204,255,0,0.3),0_0_25px_rgba(16,185,129,0.2)] cursor-pointer rounded-full"
             >
-              <MessageSquare className="w-3.5 h-3.5 fill-current shrink-0" />
+              <WhatsAppIcon className="w-3.5 h-3.5 fill-current shrink-0" />
               <span>Falar no WhatsApp Agora</span>
             </button>
           </div>

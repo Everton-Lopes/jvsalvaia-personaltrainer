@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, ShieldCheck, MapPin, Award, ArrowRight } from 'lucide-react';
+import { ShieldCheck, MapPin, Award, ArrowRight } from 'lucide-react';
 import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface FinalCTAProps {
   currentService?: ServiceType;
@@ -13,7 +14,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({ currentService }) => {
   return (
     <section
       id="contato"
-      className="py-28 bg-transparent relative overflow-hidden text-center border-t border-white/10 scroll-mt-24"
+      className="py-28 bg-transparent relative overflow-hidden text-center border-t border-white/10"
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8">
         {/* Headline */}
@@ -59,7 +60,7 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({ currentService }) => {
             }
             className="btn-whatsapp-pulse w-full sm:w-auto inline-flex items-center justify-center text-center gap-3 bg-[#CCFF00] hover:bg-white text-black font-black uppercase tracking-widest text-sm sm:text-base px-8 sm:px-12 py-5 transition-all duration-300 shadow-[0_0_35px_rgba(204,255,0,0.4)] hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] cursor-pointer transform hover:-translate-y-0.5 rounded-full"
           >
-            <MessageSquare className="w-5 h-5 fill-current shrink-0" />
+            <WhatsAppIcon className="w-5 h-5 fill-current shrink-0" />
             <span>FALAR COM JOÃO VICTOR NO WHATSAPP</span>
             <ArrowRight className="w-4 h-4 ml-1" />
           </button>

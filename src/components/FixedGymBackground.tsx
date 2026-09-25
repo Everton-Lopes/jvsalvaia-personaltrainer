@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface BackgroundScene {
   id: string;
@@ -50,7 +50,6 @@ export const FixedGymBackground: React.FC = () => {
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   // Lazy-loading: only index 0 (Hero) is initially mounted, others are loaded on demand or idle
   const [loadedSceneIndices, setLoadedSceneIndices] = useState<Set<number>>(() => new Set([0]));
-  const idleTimerRef = useRef<number | null>(null);
 
   // Progressive hydration: load scenes when active or adjacent
   const markSceneAsLoaded = (index: number) => {
@@ -74,56 +73,74 @@ export const FixedGymBackground: React.FC = () => {
   }, [activeSceneIndex]);
 
   useEffect(() => {
-    // Determine the active section during scroll to cross-fade between gym training scenes
+    // Determine the active section via IntersectionObserver tuned to the viewport
+    // vertical center. This avoids per-scroll-frame layout reads entirely.
     const sectionIds = ['hero', 'servicos', 'treinos', 'prova-social', 'faq', 'contato'];
 
-    const handleScroll = () => {
-      // Trigger threshold when section reaches upper-middle of viewport
-      const scrollPosition = window.scrollY + window.innerHeight * 0.45;
+    const mapSectionToScene = (id: string): number => {
+      switch (id) {
+        case 'hero':
+          return 0;
+        case 'servicos':
+          return 1;
+        case 'treinos':
+          return 2;
+        case 'prova-social':
+          return 3;
+        default:
+          return 4; // faq & contato share the closing scene
+      }
+    };
 
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sectionIds[i]);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          const elementTop = rect.top + window.scrollY;
-          if (scrollPosition >= elementTop) {
-            const mappedIndex = i >= 4 ? 4 : i === 3 ? 3 : i === 2 ? 2 : i === 1 ? 1 : 0;
-            setActiveSceneIndex(mappedIndex);
-            break;
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (elements.length === 0 || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSceneIndex(mapSectionToScene(entry.target.id));
           }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // initial detection
-
-    // Background idle prefetch: after 2 seconds, gracefully warm up remaining background images
-    // when main thread is idle, ensuring zero jitter on mobile networks
-    const preloadAllOnIdle = () => {
-      if ('requestIdleCallback' in window) {
-        (window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(() => {
-          setLoadedSceneIndices(new Set(BACKGROUND_SCENES.map((_, i) => i)));
         });
-      } else {
-        setLoadedSceneIndices(new Set(BACKGROUND_SCENES.map((_, i) => i)));
-      }
+      },
+      { rootMargin: '-50% 0px -50% 0px', threshold: 0 }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    // Background idle prefetch: gracefully warm up remaining background images
+    // when the main thread is idle, ensuring zero jitter on mobile networks.
+    const preloadAllOnIdle = () => {
+      setLoadedSceneIndices(new Set(BACKGROUND_SCENES.map((_, i) => i)));
     };
 
-    idleTimerRef.current = window.setTimeout(preloadAllOnIdle, 2200);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (idleTimerRef.current) {
-        clearTimeout(idleTimerRef.current);
-      }
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
     };
+
+    if (typeof idleWindow.requestIdleCallback === 'function') {
+      const idleId = idleWindow.requestIdleCallback(preloadAllOnIdle);
+      return () => {
+        idleWindow.cancelIdleCallback?.(idleId);
+      };
+    }
+
+    const timer = window.setTimeout(preloadAllOnIdle, 2200);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <div
       id="fixed-gym-background-layer"
       className="fixed inset-0 pointer-events-none select-none z-0 overflow-hidden"
+      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
       aria-hidden="true"
     >
       {/* 
@@ -180,8 +197,8 @@ export const FixedGymBackground: React.FC = () => {
         Subtle tint ensuring the gym, athletes, dumbbells and equipment are distinctly sharp and visible,
         while maintaining crisp readability of the foreground text.
       */}
-      <div className="absolute inset-0 bg-[#050505]/30" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-transparent to-[#050505]/50" />
+      <div className="absolute inset-0 bg-[#050505]/20" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/25 via-transparent to-[#050505]/35" />
     </div>
   );
 };

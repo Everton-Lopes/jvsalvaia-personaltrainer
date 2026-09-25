@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Dumbbell, Laptop, Activity, Check, MessageSquare, ArrowUpRight, Sparkles } from 'lucide-react';
+import { Dumbbell, Laptop, Activity, Check, ArrowUpRight, Sparkles } from 'lucide-react';
 import { SERVICES_DATA } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
 import { EmeraldSpotlightCard } from './EmeraldSpotlightCard';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface ServicesProps {
   currentService?: ServiceType;
@@ -150,7 +151,7 @@ export const Services: React.FC<ServicesProps> = ({ currentService }) => {
                         : 'bg-white/5 hover:bg-[#CCFF00] text-white hover:text-black border border-white/15 hover:border-[#CCFF00]'
                     }`}
                   >
-                    <MessageSquare className="w-4 h-4 fill-current shrink-0" />
+                    <WhatsAppIcon className="w-4 h-4 fill-current shrink-0" />
                     <span>CONSULTAR NO WHATSAPP</span>
                     <ArrowUpRight className="w-4 h-4" />
                   </button>

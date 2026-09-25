@@ -295,3 +295,58 @@ textarea *,
   user-select: text !important;
 }
 
+/* ==========================================================================
+   CROSS-DEVICE / CROSS-BROWSER ROBUSTNESS
+   ========================================================================== */
+
+/* Mobile menu scroll area: vh fallback with progressive dvh enhancement so the
+   menu is never clipped behind a mobile browser's dynamic address bar. */
+.menu-scroll-area {
+  max-height: calc(100vh - 80px);
+}
+
+@supports (height: 100dvh) {
+  .menu-scroll-area {
+    max-height: calc(100dvh - 80px);
+  }
+}
+
+/* Expands the touch hit area to ~40x40px without changing the visual size
+   of the element (visual X stays 16x16px). */
+.touch-hit-40::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 9999px;
+}
+
+/* Gentle continuous vertical bounce for the WhatsApp balloon only.
+   Uses the individual `translate` property so it composes with (and never
+   overrides) Framer Motion's `transform` entrance/exit animation. */
+@keyframes whatsapp-balloon-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+.whatsapp-balloon-bounce {
+  animation: whatsapp-balloon-bounce 2.6s ease-in-out infinite;
+}
+
+/* Backdrop-filter fallback for browsers / in-app webviews with poor or no
+   support: bump the translucent dark surfaces to a more opaque solid color so
+   text stays legible without blur. Runs after the utilities layer on purpose. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [class*="backdrop-blur"][class*="bg-[#050505]"],
+  [class*="backdrop-blur"][class*="bg-[#0a0a0a]"],
+  [class*="backdrop-blur"][class*="bg-[#090909]"],
+  [class*="backdrop-blur"][class*="bg-[#0c0c0c]"],
+  [class*="backdrop-blur"][class*="bg-black/"] {
+    background-color: rgba(6, 6, 6, 0.96) !important;
+  }
+}
+

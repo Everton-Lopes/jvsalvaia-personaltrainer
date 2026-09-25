@@ -62,7 +62,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({
             Privacidade &amp; Cookies
           </h4>
           <p className="text-xs text-white/60 leading-relaxed font-medium">
-            Utilizamos cookies para aprimorar sua navegação e direcionar o atendimento em conformidade com a LGPD.
+            Usamos apenas cookies essenciais para o funcionamento do site. Cookies de medição de tráfego e anúncios (Google Ads, Meta Ads) podem ser ativados com o seu consentimento, assim que as ferramentas de rastreamento forem configuradas.
           </p>
         </div>
       </div>

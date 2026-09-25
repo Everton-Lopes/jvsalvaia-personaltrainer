@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MessageSquare, MapPin, Menu, X, ChevronRight, ShieldCheck, Dumbbell } from 'lucide-react';
+import { MapPin, Menu, X, ChevronRight, ShieldCheck, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { JVLogo } from './JVLogo';
 import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface LandingHeaderProps {
   currentService?: ServiceType;
@@ -24,15 +25,25 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
     onMenuStateChange?.(isMenuOpen);
   }, [isMenuOpen, onMenuStateChange]);
 
-  // Monitor scroll for fixed header styling and progress bar
+  // Monitor scroll for fixed header styling and progress bar (rAF-throttled)
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false;
+
+    const updateScrollState = () => {
       const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
       const currentProgress = totalScroll > 0 ? (window.scrollY / totalScroll) * 100 : 0;
       setScrollProgress(currentProgress);
       setIsScrolled(window.scrollY > 20);
+      ticking = false;
     };
 
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(updateScrollState);
+    };
+
+    updateScrollState();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -220,7 +231,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
               onClick={handleHeaderCta}
               className="inline-flex items-center justify-center gap-1.5 sm:gap-2 bg-[#CCFF00] hover:bg-white text-black font-black text-[11px] sm:text-xs px-3.5 sm:px-5 py-2 sm:py-2.5 uppercase tracking-wider sm:tracking-widest transition-all duration-300 cursor-pointer shrink-0 shadow-sm hover:shadow-[0_0_10px_rgba(204,255,0,0.25)] rounded-full"
             >
-              <MessageSquare className="w-3.5 h-3.5 fill-current shrink-0" />
+              <WhatsAppIcon className="w-3.5 h-3.5 fill-current shrink-0" />
               <span className="hidden sm:inline">Chamar no WhatsApp</span>
               <span className="sm:hidden">WhatsApp</span>
             </button>
@@ -261,7 +272,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
               className="xl:hidden w-full overflow-hidden border-t border-white/10 bg-[#090909]/98 backdrop-blur-2xl shadow-[0_25px_50px_rgba(0,0,0,0.95)] mt-3 rounded-b-2xl"
             >
-              <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6 max-h-[calc(100vh-80px)] overflow-y-auto">
+              <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6 menu-scroll-area overflow-y-auto">
                 <div className="text-[10px] font-mono tracking-widest text-[#CCFF00] uppercase mb-3">
                   // NAVEGAÇÃO PRINCIPAL
                 </div>
@@ -295,7 +306,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                     onClick={handleHeaderCta}
                     className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 bg-[#CCFF00] hover:bg-white text-black font-black text-xs py-3.5 px-6 uppercase tracking-widest transition-colors cursor-pointer shadow-[0_0_20px_rgba(204,255,0,0.3)] rounded-full"
                   >
-                    <MessageSquare className="w-4 h-4 fill-current shrink-0" />
+                    <WhatsAppIcon className="w-4 h-4 fill-current shrink-0" />
                     <span>Falar com João Victor no WhatsApp</span>
                   </button>
                   <div className="flex items-center justify-center gap-2 text-xs font-mono text-white/60 uppercase">
