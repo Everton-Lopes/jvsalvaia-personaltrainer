@@ -132,6 +132,7 @@ export const TrainingGallery: React.FC = () => {
                     <img
                       src={currentSrc}
                       alt={item.title}
+                      draggable={false}
                       loading="lazy"
                       decoding="async"
                       referrerPolicy="no-referrer"

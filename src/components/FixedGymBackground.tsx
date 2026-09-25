@@ -160,6 +160,7 @@ export const FixedGymBackground: React.FC = () => {
                 <img
                   src={scene.src}
                   alt={scene.alt}
+                  draggable={false}
                   className="w-full h-full object-cover object-center scale-100 brightness-105 contrast-115 saturate-110 opacity-100"
                   loading={index === 0 ? 'eager' : 'lazy'}
                   decoding={index === 0 ? 'sync' : 'async'}
