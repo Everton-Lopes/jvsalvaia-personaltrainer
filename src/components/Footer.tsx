@@ -4,6 +4,7 @@ import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp, WHATSAPP_PHONE_FORMATTED } from '../utils/whatsapp';
 import { JVLogo } from './JVLogo';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
+import { FLOATING_WHATSAPP_CLEARANCE_VAR } from './FloatingWhatsApp';
 
 interface FooterProps {
   onOpenPrivacyPolicy: () => void;
@@ -15,7 +16,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyPolicy }) => {
   };
 
   return (
-    <footer className="bg-[#050505]/85 backdrop-blur-md border-t border-white/10 text-white/60 text-xs sm:text-sm py-12">
+    <footer
+      className="bg-[#050505]/85 backdrop-blur-md border-t border-white/10 text-white/60 text-xs sm:text-sm py-12 transition-[padding-bottom] duration-300 ease-out"
+      style={{
+        // Reserve the real space occupied by the floating WhatsApp UI so no
+        // footer text (contact info, privacy link, copyright, ēloSites credit)
+        // is ever covered, in both the closed and the open balloon states.
+        paddingBottom: `calc(var(${FLOATING_WHATSAPP_CLEARANCE_VAR}, 0px) + 3rem)`,
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/10">
           {/* Brand */}

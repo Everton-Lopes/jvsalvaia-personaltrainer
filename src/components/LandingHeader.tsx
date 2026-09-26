@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { MapPin, Menu, X, ChevronRight, ShieldCheck, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { JVLogo } from './JVLogo';
@@ -6,6 +6,7 @@ import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
 import { ServiceType } from '../types';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
+import { applyHeaderOffset, scrollToAnchor } from '../utils/headerOffset';
 
 interface LandingHeaderProps {
   currentService?: ServiceType;
@@ -19,6 +20,11 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Anchor queued while the mobile/tablet menu plays its exit animation. The
+  // final alignment only runs after the menu geometry has fully settled.
+  const pendingAnchorRef = useRef<string | null>(null);
+  const pendingAnchorTimerRef = useRef<number | null>(null);
 
   // Notify parent component about menu open/close state
   useEffect(() => {
@@ -74,6 +80,106 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMenuOpen]);
 
+  // Keep the measured header offset in sync with the REAL rendered geometry.
+  // ResizeObserver covers responsive changes, orientation, safe-area and the
+  // header's own scrolled/menu padding transitions.
+  useLayoutEffect(() => {
+    const header = document.getElementById('main-header');
+    if (!header) return;
+
+    let frame = 0;
+    const sync = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => applyHeaderOffset());
+    };
+
+    applyHeaderOffset();
+
+    const resizeObserver = new ResizeObserver(sync);
+    resizeObserver.observe(header);
+
+    window.addEventListener('resize', sync, { passive: true });
+    window.addEventListener('orientationchange', sync);
+
+    let cancelled = false;
+    if (document.fonts) {
+      document.fonts.ready
+        .then(() => {
+          if (!cancelled) sync();
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', sync);
+      window.removeEventListener('orientationchange', sync);
+    };
+  }, []);
+
+  // Align direct hash navigation (initial load, refresh, back/forward) with the
+  // real header bottom instead of the browser's default fragment position. Runs
+  // as a layout effect so the correction is applied before the first paint,
+  // avoiding a visible initial scroll jump.
+  useLayoutEffect(() => {
+    const alignFromHash = (behavior: ScrollBehavior) => {
+      const hash = window.location.hash;
+      if (!hash) return;
+      scrollToAnchor(hash.slice(1), { behavior, updateHash: false });
+    };
+
+    const handlePopState = () => alignFromHash('auto');
+    window.addEventListener('popstate', handlePopState);
+
+    // Correct the native initial fragment scroll before the first paint and
+    // once more on the next frame for browsers that defer fragment scrolling.
+    let frame = 0;
+    if (window.location.hash) {
+      alignFromHash('auto');
+      frame = window.requestAnimationFrame(() => alignFromHash('auto'));
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  // Runs the queued anchor alignment once the menu exit animation is complete.
+  const flushPendingAnchor = useCallback(() => {
+    if (pendingAnchorTimerRef.current !== null) {
+      window.clearTimeout(pendingAnchorTimerRef.current);
+      pendingAnchorTimerRef.current = null;
+    }
+    const id = pendingAnchorRef.current;
+    pendingAnchorRef.current = null;
+    if (id) scrollToAnchor(id, { behavior: 'smooth' });
+  }, []);
+
+  // Queues an anchor and starts a safety timer in case `onExitComplete` never
+  // fires (for example when the exit animation is skipped).
+  const queueAnchorForMenuExit = useCallback(
+    (id: string) => {
+      pendingAnchorRef.current = id;
+      if (pendingAnchorTimerRef.current !== null) {
+        window.clearTimeout(pendingAnchorTimerRef.current);
+      }
+      pendingAnchorTimerRef.current = window.setTimeout(flushPendingAnchor, 600);
+    },
+    [flushPendingAnchor]
+  );
+
+  // Clear any pending anchor timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (pendingAnchorTimerRef.current !== null) {
+        window.clearTimeout(pendingAnchorTimerRef.current);
+      }
+    };
+  }, []);
+
   const closeMenu = () => {
     setIsMenuOpen(false);
     document.body.style.overflow = '';
@@ -99,49 +205,23 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
     { label: 'Contato', href: '#contato', num: '06' },
   ];
 
-  // Smooth navigation that reliably scrolls to the target section across all devices
+  // Smooth navigation that aligns the destination section top with the ACTUAL
+  // bottom edge of the currently rendered fixed header.
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
 
     const targetId = href.replace('#', '');
 
-    const scrollToTarget = () => {
-      // Guarantee scroll lock is removed before calculating positions and scrolling
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-
-      const target = document.getElementById(targetId) || document.querySelector(href);
-      if (target) {
-        const headerEl = document.getElementById('main-header');
-        const headerHeight = headerEl ? Math.min(headerEl.offsetHeight, 76) : 72;
-
-        const rect = target.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetY = rect.top + scrollTop - headerHeight - 12;
-
-        window.scrollTo({
-          top: Math.max(0, targetY),
-          behavior: 'smooth',
-        });
-
-        // Update browser URL hash
-        try {
-          window.history.pushState(null, '', href);
-        } catch {
-          // Fallback
-        }
-      }
-    };
-
     if (isMenuOpen) {
-      // Mobile / Tablet: immediately unlock scroll and close menu, then scroll smoothly once viewport unfreezes
+      // Closing the menu changes the header geometry. Unlock the page, close the
+      // menu, and defer the scroll until the exit animation has fully finished so
+      // the FINAL header geometry is measured instead of the mid-transition one.
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
       setIsMenuOpen(false);
-      setTimeout(scrollToTarget, 120);
+      queueAnchorForMenuExit(targetId);
     } else {
-      // Desktop: immediate smooth scroll
-      scrollToTarget();
+      scrollToAnchor(targetId, { behavior: 'smooth' });
     }
   };
 
@@ -183,7 +263,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
             aria-label="João Victor Salvaia - Voltar ao início"
           >
             <JVLogo size="md" />
-            <div className="flex flex-col">
+            <div className="hidden min-[360px]:flex flex-col">
               <span className="text-xl sm:text-2xl font-black tracking-tighter italic text-white leading-none group-hover:text-[#CCFF00] transition-colors">
                 JV SALVAIA
               </span>
@@ -259,7 +339,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
           DOWNWARD OPENING ACCORDION DROPDOWN FOR MOBILE & TABLET (< xl)
           Opens directly downwards from the header, WITHOUT duplicating the logo/header!
         */}
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={flushPendingAnchor}>
           {isMenuOpen && (
             <motion.div
               id="mobile-tablet-menu-dropdown"

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ShieldCheck, MapPin, Dumbbell, Zap, CheckCircle2, ChevronDown } from 'lucide-react';
 import { TRAINER_INFO } from '../data/trainerData';
 import { openWhatsApp } from '../utils/whatsapp';
+import { scrollToAnchor } from '../utils/headerOffset';
 import { ServiceType } from '../types';
 import { EmeraldSpotlightCard } from './EmeraldSpotlightCard';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
@@ -197,6 +198,10 @@ export const Hero: React.FC<HeroProps> = ({ currentService }) => {
       >
         <a
           href="#servicos"
+          onClick={(e) => {
+            e.preventDefault();
+            scrollToAnchor('servicos', { behavior: 'smooth' });
+          }}
           aria-label="Rolar para os serviços"
           className="flex flex-col items-center gap-1 group cursor-pointer"
         >

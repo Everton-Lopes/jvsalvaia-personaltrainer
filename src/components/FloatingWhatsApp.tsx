@@ -10,6 +10,13 @@ interface FloatingWhatsAppProps {
   isMenuOpen?: boolean;
 }
 
+/**
+ * CSS custom property that exposes the height actually occupied by the floating
+ * WhatsApp UI measured from the bottom of the viewport. The footer consumes it
+ * so important content is never covered, in both balloon states.
+ */
+export const FLOATING_WHATSAPP_CLEARANCE_VAR = '--floating-whatsapp-clearance';
+
 export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   currentService,
   isMenuOpen = false,
@@ -18,6 +25,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   const [isDesktop, setIsDesktop] = useState(false);
   const reshowTimerRef = useRef<number | null>(null);
   const balloonClickedRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Monitor desktop vs mobile viewport for precise 24px / 18px margin anchoring
   useEffect(() => {
@@ -46,6 +54,50 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
       }
     };
   }, []);
+
+  // Expose the ACTUAL vertical space occupied by the floating UI (button plus
+  // balloon, plus the bottom safe-area margin) through a CSS variable. The
+  // footer consumes it, so the clearance always matches the real geometry and
+  // updates automatically when the balloon opens or closes.
+  useEffect(() => {
+    const root = document.documentElement;
+    const element = containerRef.current;
+
+    if (!element || isMenuOpen) {
+      root.style.setProperty(FLOATING_WHATSAPP_CLEARANCE_VAR, '0px');
+      return;
+    }
+
+    let frame = 0;
+    const update = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const node = containerRef.current;
+        if (!node) return;
+
+        const bottom = Number.parseFloat(getComputedStyle(node).bottom) || 0;
+        // `offsetHeight` ignores the balloon's bounce transform, so a small
+        // fixed safety margin covers that animation and sub-pixel rounding.
+        const occupied = node.offsetHeight + bottom + 8;
+        root.style.setProperty(FLOATING_WHATSAPP_CLEARANCE_VAR, `${Math.ceil(occupied)}px`);
+      });
+    };
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+
+    window.addEventListener('resize', update, { passive: true });
+    window.addEventListener('orientationchange', update);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+    };
+  }, [isMenuOpen]);
 
   // Reagenda a próxima aparição do balão (ciclo contínuo de 90s)
   const scheduleReshow = () => {
@@ -92,6 +144,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({
   return (
     <div
       id="floating-whatsapp-container"
+      ref={containerRef}
       className="fixed z-50 flex flex-col items-end pointer-events-none select-none transition-all duration-300 ease-out"
       style={{
         bottom: isDesktop

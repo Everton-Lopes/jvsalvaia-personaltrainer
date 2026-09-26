@@ -61,7 +61,10 @@ html, body {
   #prova-social,
   #faq,
   #contato {
-    scroll-margin-top: 84px;
+    /* Single authoritative anchor offset, measured from the real rendered header
+       (see src/utils/headerOffset.ts). The fallback only covers the brief moment
+       before the first measurement on initial page load. */
+    scroll-margin-top: var(--header-offset, 72px);
   }
 }
 
