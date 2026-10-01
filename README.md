@@ -53,12 +53,13 @@ Netlify builds the static site directly from this repository.
 The intended production branch is `main`. No backend, server or runtime
 environment is required: the deployed artifact is a pure static site.
 
-## Environment variables
+## Pending third-party IDs
 
-All variables are optional. The site works correctly while they are empty: no
-broken UI and no errors. Copy `.env.example` to `.env` locally, or set the values
-in Netlify's dashboard. `.env` and `.env.*` are gitignored; only `.env.example`
-is committed.
+The following tracking/SEO IDs are expected from the client (traffic manager)
+but are **not yet available**. All variables are optional and the site works
+correctly while they are empty: no broken UI and no errors. Copy `.env.example`
+to `.env` locally, or set the values in Netlify's dashboard. `.env` and `.env.*`
+are gitignored; only `.env.example` is committed.
 
 | Variable | Purpose |
 | --- | --- |

@@ -87,16 +87,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenPrivacyPolicy }) => {
           {/* Agency credit line */}
           <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-[10px] sm:text-[11px]">
             <span>CRIADO E DESENVOLVIDO POR</span>
-            <span className="inline-flex items-center bg-white/90 rounded px-1.5 py-0.5">
-              <img
-                src="/eloSites-logo.png"
-                alt="ēloSites"
-                className="h-4 sm:h-5 w-auto"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-            </span>
+            {/* Subtle white glow keeps the lighter "Sites" glyphs readable on the
+                near-black footer — no background/pill behind the transparent PNG. */}
+            <img
+              src="/eloSites-logo.png"
+              alt="ēloSites"
+              className="h-4 sm:h-5 w-auto"
+              style={{ filter: 'drop-shadow(0 0 2px rgba(255, 255, 255, 0.4))' }}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
             <span>O MELHOR SITE PELO MELHOR PREÇO</span>
           </div>
         </div>

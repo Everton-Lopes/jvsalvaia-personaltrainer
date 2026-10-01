@@ -13,6 +13,10 @@ interface LandingHeaderProps {
   onMenuStateChange?: (isOpen: boolean) => void;
 }
 
+// Sections whose scroll position drives the active nav highlight. Kept in sync
+// with the nav links below and independent from the background observer.
+const SECTION_IDS = ['hero', 'servicos', 'treinos', 'prova-social', 'faq', 'contato'];
+
 export const LandingHeader: React.FC<LandingHeaderProps> = ({
   currentService,
   onMenuStateChange,
@@ -20,6 +24,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState('hero');
 
   // Anchor queued while the mobile/tablet menu plays its exit animation. The
   // final alignment only runs after the menu geometry has fully settled.
@@ -52,6 +57,39 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
     updateScrollState();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Track which section sits just under the fixed header so exactly one nav item
+  // is always shown as selected. This observer is intentionally independent from
+  // the background scene observer in FixedGymBackground.tsx.
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const elements = SECTION_IDS
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+
+    if (elements.length === 0) return;
+
+    // Thin band located just below the (unscrolled) header. The section crossing
+    // this line is the one considered active.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting);
+        if (visible.length === 0) return;
+        // Prefer the section whose top most recently reached the header line
+        // (the greatest top still inside the band). This works in both scroll
+        // directions when the previous and next sections overlap the band.
+        const current = visible.reduce((best, entry) =>
+          entry.boundingClientRect.top > best.boundingClientRect.top ? entry : best
+        );
+        setActiveSection(current.target.id);
+      },
+      { rootMargin: '-88px 0px -60% 0px', threshold: 0 }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   // Lock scroll when mobile/tablet menu is open, restore when closed
@@ -205,12 +243,18 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
     { label: 'Contato', href: '#contato', num: '06' },
   ];
 
+  const isLinkActive = (href: string) => activeSection === href.slice(1);
+
   // Smooth navigation that aligns the destination section top with the ACTUAL
   // bottom edge of the currently rendered fixed header.
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
 
     const targetId = href.replace('#', '');
+
+    // Optimistic highlight: update immediately on click instead of waiting for
+    // the smooth scroll + observer to settle.
+    setActiveSection(targetId);
 
     if (isMenuOpen) {
       // Closing the menu changes the header geometry. Unlock the page, close the
@@ -292,10 +336,19 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                   <a
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href)}
-                    className="inline-flex items-center justify-center px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white/75 hover:text-[#CCFF00] hover:bg-white/[0.06] rounded-full transition-all duration-200 cursor-pointer relative group leading-none"
+                    aria-current={isLinkActive(link.href) ? 'true' : undefined}
+                    className={`inline-flex items-center justify-center px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] rounded-full transition-all duration-200 cursor-pointer relative group leading-none ${
+                      isLinkActive(link.href)
+                        ? 'text-[#CCFF00] bg-white/[0.06]'
+                        : 'text-white/75 hover:text-[#CCFF00] hover:bg-white/[0.06]'
+                    }`}
                   >
                     <span>{link.label}</span>
-                    <span className="absolute bottom-0.5 left-3.5 right-3.5 h-[2px] bg-[#CCFF00] scale-x-0 group-hover:scale-x-100 transition-transform origin-center duration-200 rounded-full shadow-[0_0_4px_#CCFF00]" />
+                    <span
+                      className={`absolute bottom-0.5 left-3.5 right-3.5 h-[2px] bg-[#CCFF00] transition-transform origin-center duration-200 rounded-full shadow-[0_0_4px_#CCFF00] ${
+                        isLinkActive(link.href) ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                      }`}
+                    />
                   </a>
                 </li>
               ))}
@@ -364,17 +417,34 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
                       key={link.href}
                       href={link.href}
                       onClick={(e) => handleNavClick(e, link.href)}
-                      className="group flex items-center justify-between p-4 border border-white/10 hover:border-[#CCFF00]/50 bg-white/[0.04] hover:bg-[#CCFF00]/10 active:bg-[#CCFF00]/20 transition-all text-white/90 hover:text-[#CCFF00] cursor-pointer rounded-xl touch-manipulation select-none"
+                      aria-current={isLinkActive(link.href) ? 'true' : undefined}
+                      className={`group flex items-center justify-between p-4 border transition-all cursor-pointer rounded-xl touch-manipulation select-none ${
+                        isLinkActive(link.href)
+                          ? 'border-[#CCFF00]/50 bg-[#CCFF00]/10 text-[#CCFF00]'
+                          : 'border-white/10 hover:border-[#CCFF00]/50 bg-white/[0.04] hover:bg-[#CCFF00]/10 active:bg-[#CCFF00]/20 text-white/90 hover:text-[#CCFF00]'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-[11px] font-mono text-[#CCFF00] font-bold">
                           {link.num}
                         </span>
-                        <span className="text-sm font-black uppercase tracking-wider italic text-white group-hover:text-[#CCFF00] transition-colors">
+                        <span
+                          className={`text-sm font-black uppercase tracking-wider italic transition-colors ${
+                            isLinkActive(link.href)
+                              ? 'text-[#CCFF00]'
+                              : 'text-white group-hover:text-[#CCFF00]'
+                          }`}
+                        >
                           {link.label === 'Treinos' ? 'Treinos na Prática' : link.label}
                         </span>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-[#CCFF00] group-hover:translate-x-1 transition-all" />
+                      <ChevronRight
+                        className={`w-4 h-4 transition-all ${
+                          isLinkActive(link.href)
+                            ? 'text-[#CCFF00]'
+                            : 'text-white/40 group-hover:text-[#CCFF00] group-hover:translate-x-1'
+                        }`}
+                      />
                     </a>
                   ))}
                 </nav>
