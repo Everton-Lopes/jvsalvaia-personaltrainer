@@ -16,8 +16,48 @@ const DROPDOWN_ID = 'mobile-tablet-menu-dropdown';
 
 export const HEADER_OFFSET_VAR = '--header-offset';
 
+/**
+ * CSS custom properties that expose the measured lead-in gap of the two inner
+ * anchors to `scroll-margin-top`, so native fragment jumps match the JS scroll.
+ */
+const TREINOS_LEAD_VAR = '--treinos-lead';
+const PROVA_SOCIAL_LEAD_VAR = '--prova-social-lead';
+
 /** Allowed difference between the section top and the header bottom (CSS px). */
 const ALIGN_TOLERANCE_PX = 1;
+
+/**
+ * Extra leading space (CSS px) that must stay visible above an anchor.
+ *
+ * The other four anchors are top-level sections whose own top padding is part of
+ * their box, so scrolling flush to the section top already reveals their
+ * breathing room. #treinos and #prova-social are inner divs inside ONE shared
+ * wrapper section, so their leading gap lives OUTSIDE their own box and would
+ * otherwise be skipped entirely. The gap is measured from the live boxes (never
+ * from a numeric constant) so it stays correct if the padding/spacing utilities
+ * change or are expressed with logical properties:
+ *   - #treinos: distance from the wrapper <section> top edge to the div (its top
+ *     padding/border).
+ *   - #prova-social: distance from the previous section's bottom edge to the div
+ *     (the `space-y-*` separation).
+ */
+function leadingGapFor(target: HTMLElement): number {
+  if (target.id === 'treinos') {
+    const wrapper = target.closest('section') ?? target.parentElement;
+    if (wrapper) {
+      const gap = target.getBoundingClientRect().top - wrapper.getBoundingClientRect().top;
+      if (Number.isFinite(gap) && gap > 0) return gap;
+    }
+  } else if (target.id === 'prova-social') {
+    const previous = target.previousElementSibling as HTMLElement | null;
+    const anchor = previous ?? target.parentElement;
+    if (anchor) {
+      const gap = target.getBoundingClientRect().top - anchor.getBoundingClientRect().bottom;
+      if (Number.isFinite(gap) && gap > 0) return gap;
+    }
+  }
+  return 0;
+}
 
 /** Safety limit for the post-scroll correction passes. */
 const MAX_CORRECTION_PASSES = 4;
@@ -76,7 +116,18 @@ function renderedHeaderBottom(): number {
 export function applyHeaderOffset(): number {
   if (typeof document === 'undefined') return 0;
   const value = renderedHeaderBottom();
-  document.documentElement.style.setProperty(HEADER_OFFSET_VAR, `${value}px`);
+  const root = document.documentElement;
+  root.style.setProperty(HEADER_OFFSET_VAR, `${value}px`);
+
+  // Keep native fragment navigation (scroll-margin-top) in sync with the JS
+  // scroll for the two inner anchors, using their measured lead-in gap.
+  const treinos = document.getElementById('treinos');
+  if (treinos) root.style.setProperty(TREINOS_LEAD_VAR, `${leadingGapFor(treinos)}px`);
+  const provaSocial = document.getElementById('prova-social');
+  if (provaSocial) {
+    root.style.setProperty(PROVA_SOCIAL_LEAD_VAR, `${leadingGapFor(provaSocial)}px`);
+  }
+
   return value;
 }
 
@@ -97,18 +148,26 @@ function scrollWithBehavior(top: number, behavior: ScrollBehavior): void {
 }
 
 /**
- * Scroll position that places the top of `target` exactly at `headerBottom`.
+ * Scroll position that places the top of `target` exactly at `headerBottom`,
+ * plus any anchor-specific lead-in gap (kept flush for the top-level sections).
  */
 function destinationFor(target: HTMLElement, headerBottom: number): number {
-  return target.getBoundingClientRect().top + currentScrollTop() - headerBottom;
+  return (
+    target.getBoundingClientRect().top +
+    currentScrollTop() -
+    headerBottom -
+    leadingGapFor(target)
+  );
 }
 
 /**
  * Signed mismatch between the target section top and the header bottom, in
- * viewport coordinates. Zero means a perfect alignment.
+ * viewport coordinates. Zero means a perfect alignment. The anchor-specific
+ * lead-in gap is included so the settle/guard correction converges on the same
+ * position the initial scroll aimed for.
  */
 function alignmentError(target: HTMLElement): number {
-  return target.getBoundingClientRect().top - renderedHeaderBottom();
+  return target.getBoundingClientRect().top - renderedHeaderBottom() - leadingGapFor(target);
 }
 
 /**
